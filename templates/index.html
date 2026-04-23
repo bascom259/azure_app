@@ -1,112 +1,180 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>AI Chatbot</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial;
-            background: #0f172a;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Chatbot</title>
 
-        .header {
-            padding: 15px;
-            background: #1e293b;
-            text-align: center;
-            font-size: 20px;
-            font-weight: bold;
-        }
+<style>
+:root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --user: #3b82f6;
+    --bot: #334155;
+    --text: #e2e8f0;
+}
 
-        .chat-box {
-            flex: 1;
-            padding: 15px;
-            overflow-y: auto;
-        }
+* {
+    box-sizing: border-box;
+}
 
-        .msg {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 10px;
-            max-width: 60%;
-        }
+body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
 
-        .user {
-            background: #3b82f6;
-            align-self: flex-end;
-        }
+/* HEADER */
+.header {
+    padding: 14px;
+    text-align: center;
+    background: var(--panel);
+    font-weight: 600;
+    font-size: 18px;
+}
 
-        .bot {
-            background: #334155;
-            align-self: flex-start;
-        }
+/* CHAT AREA */
+.chat-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+}
 
-        .input-area {
-            display: flex;
-            padding: 10px;
-            background: #1e293b;
-        }
+/* MESSAGE */
+.msg {
+    max-width: 75%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    margin: 6px 0;
+    line-height: 1.4;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
 
-        input {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-        }
+/* USER */
+.user {
+    background: var(--user);
+    align-self: flex-end;
+}
 
-        button {
-            margin-left: 10px;
-            padding: 10px 15px;
-            background: #22c55e;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            cursor: pointer;
-        }
-    </style>
+/* BOT */
+.bot {
+    background: var(--bot);
+    align-self: flex-start;
+}
+
+/* INPUT AREA */
+.input-area {
+    display: flex;
+    padding: 10px;
+    background: var(--panel);
+    gap: 8px;
+}
+
+/* INPUT */
+textarea {
+    flex: 1;
+    resize: none;
+    border: none;
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 14px;
+    outline: none;
+    max-height: 120px;
+}
+
+/* BUTTON */
+button {
+    background: #22c55e;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 10px;
+    color: white;
+    cursor: pointer;
+}
+
+/* MOBILE TWEAKS */
+@media (max-width: 600px) {
+    .msg {
+        max-width: 90%;
+        font-size: 14px;
+    }
+
+    .header {
+        font-size: 16px;
+    }
+}
+</style>
 </head>
+
 <body>
 
 <div class="header">🤖 AI Chatbot</div>
 
-<div class="chat-box" id="chat"></div>
+<div id="chat" class="chat-container"></div>
 
 <div class="input-area">
-    <input id="msg" placeholder="Type a message..." />
+    <textarea id="msg" placeholder="Type a message..."></textarea>
     <button onclick="send()">Send</button>
 </div>
 
 <script>
-async function send() {
-    let input = document.getElementById("msg");
-    let chat = document.getElementById("chat");
+const input = document.getElementById("msg");
 
-    let text = input.value;
+input.addEventListener("input", () => {
+    input.style.height = "auto";
+    input.style.height = input.scrollHeight + "px";
+});
+
+input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        send();
+    }
+});
+
+async function send() {
+    let text = input.value.trim();
     if (!text) return;
 
     addMessage(text, "user");
     input.value = "";
+    input.style.height = "auto";
 
-    let res = await fetch("/chat", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({message: text})
-    });
+    let loading = addMessage("Typing...", "bot");
 
-    let data = await res.json();
-    addMessage(data.reply, "bot");
+    try {
+        let res = await fetch("/chat", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({message: text})
+        });
+
+        let data = await res.json();
+        loading.innerText = data.reply;
+
+    } catch (err) {
+        loading.innerText = "Error. Try again.";
+    }
 }
 
 function addMessage(text, type) {
     let chat = document.getElementById("chat");
+
     let div = document.createElement("div");
     div.className = "msg " + type;
     div.innerText = text;
+
     chat.appendChild(div);
     chat.scrollTop = chat.scrollHeight;
+
+    return div;
 }
 </script>
 
