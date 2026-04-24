@@ -2,22 +2,18 @@ from flask import Flask, request, render_template, Response
 import os
 from datetime import datetime
 import time
-
-# NEW Gemini SDK
 from google import genai
 
 from db.database import save_chat, get_memory, init_db
 
 app = Flask(__name__)
 
-# Init DB
 init_db()
 
-# Gemini Client
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 # =========================
-# AGENTIC LAYER
+# AGENT
 # =========================
 def agent(user_msg):
     msg = user_msg.lower()
@@ -35,15 +31,12 @@ def agent(user_msg):
 
 
 # =========================
-# GEMINI RESPONSE
+# GEMINI
 # =========================
 def generate_reply(messages):
-    # Convert chat format → Gemini prompt
     prompt = ""
     for m in messages:
-        role = m["role"]
-        content = m["content"]
-        prompt += f"{role}: {content}\n"
+        prompt += f"{m['role']}: {m['content']}\n"
 
     response = client.models.generate_content(
         model="gemini-2.5-flash",
@@ -66,7 +59,7 @@ def chat_stream():
     try:
         user_msg = request.json.get("message")
 
-        # 1. Agent shortcut
+        # Agent
         agent_response = agent(user_msg)
         if agent_response:
             save_chat(user_msg, agent_response)
@@ -78,7 +71,7 @@ def chat_stream():
 
             return Response(generate(), mimetype='text/plain')
 
-        # 2. Memory + LLM
+        # Memory + LLM
         messages = [{"role": "system", "content": "You are a helpful assistant."}]
         messages += get_memory()
         messages.append({"role": "user", "content": user_msg})
