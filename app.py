@@ -4,9 +4,15 @@ import os
 
 app = Flask(__name__)
 
-# 🔑 Set your API key
-genai.configure(api_key="AIzaSyCgCv_MCnL0tljYzqFCT7RNOLEQaay9gvM")
+# 🔐 Read API key from environment variable
+API_KEY = os.getenv("GEMINI_API_KEY")
 
+if not API_KEY:
+    raise ValueError("GEMINI_API_KEY not set")
+
+genai.configure(api_key=API_KEY)
+
+# Use a stable fast model
 model = genai.GenerativeModel("gemini-2.5-flash")
 
 @app.route("/")
@@ -15,10 +21,15 @@ def home():
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    user_msg = request.json.get("message")
+    try:
+        user_msg = request.json.get("message")
 
-    response = model.generate_content(
-        f"You are a friendly, casual chatbot. Reply naturally.\nUser: {user_msg}"
-    )
+        response = model.generate_content(
+            f"You are a friendly, casual chatbot. Keep replies short and natural.\nUser: {user_msg}"
+        )
 
-    return jsonify({"reply": response.text})
+        return jsonify({"reply": response.text})
+
+    except Exception as e:
+        print("ERROR:", str(e))  # shows in Azure logs
+        return jsonify({"reply": "⚠️ Something went wrong. Try again."})
