@@ -15,7 +15,7 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 def generate_reply(messages):
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="llama3-8b-8192",
         messages=messages,
         temperature=0.7
     )
