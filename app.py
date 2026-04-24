@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 
 # 🔑 Set your API key
-genai.configure(api_key="AIzaSyADU6NnP6nBwX_xaT4upMVrzcz1sMyR7BY")
+genai.configure(api_key="AIzaSyCgCv_MCnL0tljYzqFCT7RNOLEQaay9gvM")
 
 model = genai.GenerativeModel("gemini-2.5-flash")
 
