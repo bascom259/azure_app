@@ -1,5 +1,5 @@
 from flask import Flask, request, render_template
-from groq import Groq
+import google.generativeai as genai
 import os
 from db.database import save_chat, get_memory, init_db
 from datetime import datetime
@@ -7,27 +7,43 @@ import time
 
 app = Flask(__name__)
 
-# Initialize database
+# Init DB
 init_db()
 
-# Load Groq API key from environment
-api_key = os.getenv("GROQ_API_KEY")
-print("GROQ KEY LOADED:", "YES" if api_key else "NO")
+# =========================
+# 🔑 GEMINI SETUP
+# =========================
+api_key = os.getenv("GEMINI_API_KEY")
+print("GEMINI KEY LOADED:", "YES" if api_key else "NO")
 
-client = Groq(api_key=api_key)
+genai.configure(api_key=api_key)
+
+model = genai.GenerativeModel("gemini-1.5-flash")  
+# 👉 Change to "gemini-2.5-flash" if available in your account
 
 
 # =========================
-# 🔥 LLM CALL (Groq)
+# 🔥 LLM CALL
 # =========================
 def generate_reply(messages):
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",  # ✅ your requested model
-        messages=messages,
-        temperature=0.7,
-        max_tokens=1024
-    )
-    return response.choices[0].message.content
+    try:
+        # Convert chat history → plain text (Gemini expects prompt style)
+        prompt = ""
+        for m in messages:
+            if m["role"] == "user":
+                prompt += f"User: {m['content']}\n"
+            elif m["role"] == "assistant":
+                prompt += f"Assistant: {m['content']}\n"
+
+        prompt += "Assistant:"
+
+        response = model.generate_content(prompt)
+
+        return response.text
+
+    except Exception as e:
+        print("GEMINI ERROR:", str(e))
+        raise e
 
 
 # =========================
@@ -43,7 +59,7 @@ def agent(user_msg):
         return f"📅 Today is {datetime.now().strftime('%Y-%m-%d')}"
 
     if "who are you" in msg:
-        return "🤖 I'm your AI assistant powered by Groq ⚡"
+        return "🤖 I'm your AI assistant powered by Gemini ⚡"
 
     return None
 
@@ -65,7 +81,7 @@ def chat_stream():
         print("USER:", user_msg)
 
         # -------------------------
-        # 🧠 Agent check
+        # 🧠 Agent
         # -------------------------
         agent_response = agent(user_msg)
         if agent_response:
@@ -83,30 +99,26 @@ def chat_stream():
         # -------------------------
         messages = [{
             "role": "system",
-            "content": "You are a friendly, casual chatbot. Talk like a human."
+            "content": "You are a friendly, casual chatbot."
         }]
 
-        # Add past memory
         memory = get_memory()
         print("MEMORY:", memory)
 
         messages += memory
-
-        # Add current message
         messages.append({"role": "user", "content": user_msg})
 
         # -------------------------
-        # 🤖 LLM Response
+        # 🤖 Gemini Response
         # -------------------------
         reply = generate_reply(messages)
 
         print("BOT:", reply)
 
-        # Save to DB
         save_chat(user_msg, reply)
 
         # -------------------------
-        # ⚡ Streaming response
+        # ⚡ Streaming
         # -------------------------
         def generate():
             for word in reply.split():
@@ -121,7 +133,7 @@ def chat_stream():
 
 
 # =========================
-# 🚀 ENTRY POINT
+# 🚀 ENTRY
 # =========================
 if __name__ == "__main__":
     app.run(debug=True)
