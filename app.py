@@ -1,53 +1,23 @@
-from flask import Flask, request, render_template
-import google.generativeai as genai
+from flask import Flask, request, render_template, Response
 import os
-from db.database import save_chat, get_memory, init_db
 from datetime import datetime
 import time
+
+# NEW Gemini SDK
+from google import genai
+
+from db.database import save_chat, get_memory, init_db
 
 app = Flask(__name__)
 
 # Init DB
 init_db()
 
-# =========================
-# 🔑 GEMINI SETUP
-# =========================
-api_key = os.getenv("GEMINI_API_KEY")
-print("GEMINI KEY LOADED:", "YES" if api_key else "NO")
-
-genai.configure(api_key=api_key)
-
-model = genai.GenerativeModel("gemini-2.5-flash")  
-# 👉 Change to "gemini-2.5-flash" if available in your account
-
+# Gemini Client
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 # =========================
-# 🔥 LLM CALL
-# =========================
-def generate_reply(messages):
-    try:
-        # Convert chat history → plain text (Gemini expects prompt style)
-        prompt = ""
-        for m in messages:
-            if m["role"] == "user":
-                prompt += f"User: {m['content']}\n"
-            elif m["role"] == "assistant":
-                prompt += f"Assistant: {m['content']}\n"
-
-        prompt += "Assistant:"
-
-        response = model.generate_content(prompt)
-
-        return response.text
-
-    except Exception as e:
-        print("GEMINI ERROR:", str(e))
-        raise e
-
-
-# =========================
-# 🤖 AGENTIC LAYER
+# AGENTIC LAYER
 # =========================
 def agent(user_msg):
     msg = user_msg.lower()
@@ -65,7 +35,26 @@ def agent(user_msg):
 
 
 # =========================
-# 🌐 ROUTES
+# GEMINI RESPONSE
+# =========================
+def generate_reply(messages):
+    # Convert chat format → Gemini prompt
+    prompt = ""
+    for m in messages:
+        role = m["role"]
+        content = m["content"]
+        prompt += f"{role}: {content}\n"
+
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt
+    )
+
+    return response.text
+
+
+# =========================
+# ROUTES
 # =========================
 @app.route("/")
 def home():
@@ -75,14 +64,9 @@ def home():
 @app.route("/chat-stream", methods=["POST"])
 def chat_stream():
     try:
-        data = request.get_json()
-        user_msg = data.get("message", "")
+        user_msg = request.json.get("message")
 
-        print("USER:", user_msg)
-
-        # -------------------------
-        # 🧠 Agent
-        # -------------------------
+        # 1. Agent shortcut
         agent_response = agent(user_msg)
         if agent_response:
             save_chat(user_msg, agent_response)
@@ -90,50 +74,26 @@ def chat_stream():
             def generate():
                 for word in agent_response.split():
                     yield word + " "
-                    time.sleep(0.02)
+                    time.sleep(0.03)
 
-            return app.response_class(generate(), mimetype="text/plain")
+            return Response(generate(), mimetype='text/plain')
 
-        # -------------------------
-        # 💾 Memory + LLM
-        # -------------------------
-        messages = [{
-            "role": "system",
-            "content": "You are a friendly, casual chatbot."
-        }]
-
-        memory = get_memory()
-        print("MEMORY:", memory)
-
-        messages += memory
+        # 2. Memory + LLM
+        messages = [{"role": "system", "content": "You are a helpful assistant."}]
+        messages += get_memory()
         messages.append({"role": "user", "content": user_msg})
 
-        # -------------------------
-        # 🤖 Gemini Response
-        # -------------------------
         reply = generate_reply(messages)
-
-        print("BOT:", reply)
 
         save_chat(user_msg, reply)
 
-        # -------------------------
-        # ⚡ Streaming
-        # -------------------------
         def generate():
             for word in reply.split():
                 yield word + " "
-                time.sleep(0.02)
+                time.sleep(0.03)
 
-        return app.response_class(generate(), mimetype="text/plain")
+        return Response(generate(), mimetype='text/plain')
 
     except Exception as e:
-        print("❌ ERROR:", str(e))
+        print("ERROR:", str(e))
         return "⚠️ Error occurred"
-
-
-# =========================
-# 🚀 ENTRY
-# =========================
-if __name__ == "__main__":
-    app.run(debug=True)
