@@ -1,108 +1,55 @@
-from flask import Flask, request, render_template
+from flask import Flask, render_template, request, jsonify
+from groq import Groq
 import os
-from datetime import datetime
-import time
-import traceback
-
-# Gemini NEW SDK
-from google import genai
-
-from db.database import save_chat, get_memory, init_db
 
 app = Flask(__name__)
 
-# Init DB
-init_db()
+# 🔑 Load API Key from environment
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# Gemini setup
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+# 🧠 In-memory chat history (short-term memory)
+chat_history = []
 
+# 🧾 System prompt for clean formatting
+SYSTEM_PROMPT = """
+You are a helpful AI assistant.
 
-# -------------------------
-# GENERATE REPLY (FIXED)
-# -------------------------
-def generate_reply(messages):
-    # Convert messages → plain prompt (Gemini needs string)
-    prompt = "\n".join([m["content"] for m in messages])
+Format responses using proper Markdown:
+- Use headings (##, ###)
+- Use bullet points
+- Use spacing between paragraphs
+- Keep answers clean and readable
+"""
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
-
-    return response.text
-
-
-# -------------------------
-# AGENTIC LAYER
-# -------------------------
-def agent(user_msg):
-    msg = user_msg.lower()
-
-    if "time" in msg:
-        return f"⏰ Current time: {datetime.now().strftime('%H:%M:%S')}"
-
-    if "date" in msg:
-        return f"📅 Today is {datetime.now().strftime('%Y-%m-%d')}"
-
-    if "who are you" in msg:
-        return "🤖 I'm your AI assistant running on Gemini ⚡"
-
-    return None
-
-
-# -------------------------
-# ROUTES
-# -------------------------
 @app.route("/")
-def home():
+def index():
     return render_template("index.html")
 
+@app.route("/chat", methods=["POST"])
+def chat():
+    user_input = request.json.get("message")
 
-@app.route("/chat-stream", methods=["POST"])
-def chat_stream():
+    # Add user message to history
+    chat_history.append({"role": "user", "content": user_input})
+
     try:
-        data = request.get_json()
-        user_msg = data.get("message", "").strip()
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "system", "content": SYSTEM_PROMPT}] + chat_history,
+            temperature=0.7,
+            max_tokens=1024
+        )
 
-        if not user_msg:
-            return "⚠️ Empty message"
+        bot_reply = response.choices[0].message.content
 
-        # -------------------------
-        # AGENT RESPONSE
-        # -------------------------
-        agent_response = agent(user_msg)
-        if agent_response:
-            save_chat(user_msg, agent_response)
+        # Save bot response
+        chat_history.append({"role": "assistant", "content": bot_reply})
 
-            def generate():
-                for word in agent_response.split():
-                    yield word + " "
-                    time.sleep(0.02)
-
-            return app.response_class(generate(), mimetype='text/plain')
-
-        # -------------------------
-        # MEMORY + MODEL
-        # -------------------------
-        messages = [{"role": "system", "content": "You are a helpful assistant."}]
-        messages += get_memory()
-        messages.append({"role": "user", "content": user_msg})
-
-        reply = generate_reply(messages)
-
-        save_chat(user_msg, reply)
-
-        def generate():
-            for word in reply.split():
-                yield word + " "
-                time.sleep(0.02)
-
-        return app.response_class(generate(), mimetype='text/plain')
+        return jsonify({"response": bot_reply})
 
     except Exception as e:
-        # 🔥 FULL DEBUG OUTPUT
-        print("ERROR:", str(e))
-        print(traceback.format_exc())
+        return jsonify({"response": f"⚠️ Error: {str(e)}"})
 
-        return f"⚠️ {str(e)}"
+# 🔥 Important for Azure
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000)
