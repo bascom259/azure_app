@@ -1,48 +1,44 @@
-const input = document.getElementById("msg");
+async function sendMessage() {
+    const input = document.getElementById("user-input");
+    const message = input.value.trim();
 
-input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        send();
-    }
-});
+    if (!message) return;
 
-async function send() {
-    let text = input.value.trim();
-    if (!text) return;
+    const chatBox = document.getElementById("chat-box");
 
-    addMessage("👤 " + text, "user");
+    // User message
+    const userDiv = document.createElement("div");
+    userDiv.className = "message user-message";
+    userDiv.innerText = message;
+    chatBox.appendChild(userDiv);
+
     input.value = "";
 
-    let botMsg = addMessage("🤖 Typing...", "bot");
+    // Bot typing indicator
+    const botDiv = document.createElement("div");
+    botDiv.className = "message bot-message";
+    botDiv.innerText = "Typing...";
+    chatBox.appendChild(botDiv);
 
-    const res = await fetch("/chat-stream", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({message: text})
-    });
+    chatBox.scrollTop = chatBox.scrollHeight;
 
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
+    try {
+        const res = await fetch("/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ message })
+        });
 
-    botMsg.innerText = "🤖 ";
+        const data = await res.json();
 
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        botMsg.innerText += decoder.decode(value);
+        // Convert Markdown → HTML
+        botDiv.innerHTML = marked.parse(data.response);
+
+    } catch (err) {
+        botDiv.innerText = "Error: Could not connect.";
     }
-}
 
-function addMessage(text, type) {
-    let chat = document.getElementById("chat");
-
-    let div = document.createElement("div");
-    div.className = "msg " + type;
-    div.innerText = text;
-
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-
-    return div;
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
