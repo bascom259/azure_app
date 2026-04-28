@@ -4,29 +4,25 @@
     <meta charset="UTF-8">
     <title>AI Chatbot</title>
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="/static/style.css">
-
-    <!-- Markdown parser -->
+    <!-- Marked.js for Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
 <div class="chat-container">
-    
-    <div class="header">
-        🤖 AI Chatbot
-    </div>
+    <div class="chat-header">🤖 AI Chatbot</div>
 
-    <div id="chat-box" class="chat-box"></div>
+    <div id="chat-box"></div>
 
-    <div class="input-container">
-        <input id="user-input" type="text" placeholder="Type message..." />
+    <div class="input-area">
+        <input type="text" id="message" placeholder="Type message..." />
         <button onclick="sendMessage()">Send</button>
     </div>
-
 </div>
 
 <script src="/static/script.js"></script>
+
 </body>
 </html>
