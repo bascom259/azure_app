@@ -1,95 +1,77 @@
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
-    background: #0b132b;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+    font-family: 'Segoe UI', sans-serif;
+    background: #0f172a;
+    color: white;
 }
 
-/* Container */
 .chat-container {
-    width: 420px;
-    height: 600px;
-    background: #1c2541;
-    border-radius: 12px;
+    width: 100%;
+    max-width: 900px;
+    margin: auto;
+    height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
 }
 
-/* Header */
-.header {
-    padding: 14px;
+.chat-header {
     text-align: center;
-    background: #3a506b;
-    color: white;
+    padding: 15px;
+    font-size: 20px;
     font-weight: bold;
+    background: #1e293b;
+    border-bottom: 1px solid #334155;
 }
 
-/* Chat box */
-.chat-box {
+#chat-box {
     flex: 1;
-    padding: 12px;
+    padding: 20px;
     overflow-y: auto;
-    display: flex;
-    flex-direction: column;
 }
 
-/* Messages */
-.message {
-    margin: 8px 0;
-    padding: 10px 14px;
-    border-radius: 12px;
+.user-msg {
+    background: #2563eb;
+    padding: 12px 16px;
+    border-radius: 15px;
+    margin: 10px 0;
+    max-width: 70%;
+    margin-left: auto;
+}
+
+.bot-msg {
+    background: #1e293b;
+    padding: 15px;
+    border-radius: 15px;
+    margin: 10px 0;
     max-width: 75%;
+}
+
+/* 🔥 Markdown Styling */
+.bot-msg h1, .bot-msg h2, .bot-msg h3 {
+    margin-top: 10px;
+}
+
+.bot-msg p {
+    margin: 8px 0;
     line-height: 1.5;
-    font-size: 14px;
 }
 
-/* User */
-.user-message {
-    align-self: flex-end;
-    background: #3a86ff;
-    color: white;
+.bot-msg ul, .bot-msg ol {
+    margin-left: 20px;
 }
 
-/* Bot */
-.bot-message {
-    align-self: flex-start;
-    background: #2c2f3a;
-    color: #eaeaea;
+.bot-msg li {
+    margin: 5px 0;
 }
 
-/* Markdown styling */
-.bot-message h1,
-.bot-message h2,
-.bot-message h3 {
-    margin: 8px 0 4px;
-    color: #ffffff;
+.bot-msg strong {
+    color: #60a5fa;
 }
 
-.bot-message p {
-    margin: 6px 0;
-}
-
-.bot-message ul {
-    padding-left: 20px;
-    margin: 6px 0;
-}
-
-.bot-message li {
-    margin-bottom: 4px;
-}
-
-.bot-message strong {
-    color: #ffffff;
-}
-
-/* Input */
-.input-container {
+.input-area {
     display: flex;
-    border-top: 1px solid #444;
+    padding: 10px;
+    background: #1e293b;
 }
 
 input {
@@ -97,17 +79,19 @@ input {
     padding: 10px;
     border: none;
     outline: none;
-    font-size: 14px;
+    border-radius: 8px;
 }
 
 button {
-    padding: 10px 16px;
-    background: #3a86ff;
-    color: white;
+    margin-left: 10px;
+    padding: 10px 20px;
     border: none;
+    background: #2563eb;
+    color: white;
+    border-radius: 8px;
     cursor: pointer;
 }
 
 button:hover {
-    background: #2f6edc;
+    background: #1d4ed8;
 }
