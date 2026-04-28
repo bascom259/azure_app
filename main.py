@@ -1,21 +1,27 @@
 from flask import Flask, render_template, request, jsonify
-from groq import Groq
+import google.generativeai as genai
 import os
-
-
 
 app = Flask(__name__)
 
-# ✅ GROQ ONLY
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+# 🔑 Configure Gemini API
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
+# Use Gemini model
+model = genai.GenerativeModel("gemini-1.5-flash")
+
+# 🧠 Chat history
 chat_history = []
 
+# 🧾 System prompt for formatting
 SYSTEM_PROMPT = """
+You are a helpful AI assistant.
+
 Format responses using proper Markdown:
-- Use headings
+- Use headings (##, ###)
 - Use bullet points
-- Keep it clean
+- Use spacing between paragraphs
+- Keep answers clean and readable
 """
 
 @app.route("/")
@@ -26,19 +32,25 @@ def index():
 def chat():
     user_input = request.json.get("message")
 
-    chat_history.append({"role": "user", "content": user_input})
+    # Add user input
+    chat_history.append({"role": "user", "parts": [user_input]})
 
     try:
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "system", "content": SYSTEM_PROMPT}] + chat_history
-        )
+        # Convert history into Gemini format
+        gemini_messages = [{"role": "user", "parts": [SYSTEM_PROMPT]}] + chat_history
 
-        reply = response.choices[0].message.content
+        response = model.generate_content(gemini_messages)
 
-        chat_history.append({"role": "assistant", "content": reply})
+        bot_reply = response.text
 
-        return jsonify({"response": reply})
+        # Save response
+        chat_history.append({"role": "model", "parts": [bot_reply]})
+
+        return jsonify({"response": bot_reply})
 
     except Exception as e:
-        return jsonify({"response": f"⚠️ {str(e)}"})
+        return jsonify({"response": f"⚠️ Error: {str(e)}"})
+
+# 🔥 Azure entry point
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000)
