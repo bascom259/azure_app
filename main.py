@@ -4,21 +4,16 @@ import os
 
 app = Flask(__name__)
 
-# 🔑 Load API Key from environment
+# ✅ GROQ ONLY
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# 🧠 In-memory chat history (short-term memory)
 chat_history = []
 
-# 🧾 System prompt for clean formatting
 SYSTEM_PROMPT = """
-You are a helpful AI assistant.
-
 Format responses using proper Markdown:
-- Use headings (##, ###)
+- Use headings
 - Use bullet points
-- Use spacing between paragraphs
-- Keep answers clean and readable
+- Keep it clean
 """
 
 @app.route("/")
@@ -29,27 +24,19 @@ def index():
 def chat():
     user_input = request.json.get("message")
 
-    # Add user message to history
     chat_history.append({"role": "user", "content": user_input})
 
     try:
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role": "system", "content": SYSTEM_PROMPT}] + chat_history,
-            temperature=0.7,
-            max_tokens=1024
+            messages=[{"role": "system", "content": SYSTEM_PROMPT}] + chat_history
         )
 
-        bot_reply = response.choices[0].message.content
+        reply = response.choices[0].message.content
 
-        # Save bot response
-        chat_history.append({"role": "assistant", "content": bot_reply})
+        chat_history.append({"role": "assistant", "content": reply})
 
-        return jsonify({"response": bot_reply})
+        return jsonify({"response": reply})
 
     except Exception as e:
-        return jsonify({"response": f"⚠️ Error: {str(e)}"})
-
-# 🔥 Important for Azure
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
+        return jsonify({"response": f"⚠️ {str(e)}"})
