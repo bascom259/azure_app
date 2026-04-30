@@ -1,7 +1,7 @@
 body {
     margin: 0;
-    font-family: 'Segoe UI', sans-serif;
     background: #0f172a;
+    font-family: Arial, sans-serif;
     color: white;
 }
 
@@ -15,83 +15,93 @@ body {
 }
 
 .chat-header {
+    padding: 16px;
     text-align: center;
-    padding: 15px;
-    font-size: 20px;
     font-weight: bold;
     background: #1e293b;
-    border-bottom: 1px solid #334155;
 }
 
 #chat-box {
     flex: 1;
-    padding: 20px;
     overflow-y: auto;
+    padding: 20px;
 }
 
-.user-msg {
-    background: #2563eb;
-    padding: 12px 16px;
-    border-radius: 15px;
+/* Messages */
+.message {
+    padding: 14px;
+    border-radius: 12px;
     margin: 10px 0;
-    max-width: 70%;
+    max-width: 75%;
+    line-height: 1.6;
+}
+
+.user {
+    background: #2563eb;
     margin-left: auto;
 }
 
-.bot-msg {
+.bot {
     background: #1e293b;
-    padding: 15px;
-    border-radius: 15px;
+}
+
+/* Markdown styling */
+.message h1, .message h2, .message h3 {
     margin: 10px 0;
-    max-width: 75%;
 }
 
-/* 🔥 Markdown Styling */
-.bot-msg h1, .bot-msg h2, .bot-msg h3 {
-    margin-top: 10px;
+.message p {
+    margin: 6px 0;
 }
 
-.bot-msg p {
-    margin: 8px 0;
-    line-height: 1.5;
+.message ul {
+    padding-left: 20px;
 }
 
-.bot-msg ul, .bot-msg ol {
-    margin-left: 20px;
+/* Code block */
+pre {
+    position: relative;
+    background: #0b1220;
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
 }
 
-.bot-msg li {
-    margin: 5px 0;
+/* Copy button */
+.copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #334155;
+    border: none;
+    color: white;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 12px;
 }
 
-.bot-msg strong {
-    color: #60a5fa;
-}
-
-.input-area {
+/* Input */
+.input-box {
     display: flex;
     padding: 10px;
     background: #1e293b;
 }
 
-input {
+.input-box input {
     flex: 1;
     padding: 10px;
+    border-radius: 6px;
     border: none;
     outline: none;
-    border-radius: 8px;
 }
 
-button {
+.input-box button {
     margin-left: 10px;
-    padding: 10px 20px;
-    border: none;
+    padding: 10px 16px;
     background: #2563eb;
+    border: none;
     color: white;
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
-}
-
-button:hover {
-    background: #1d4ed8;
 }
